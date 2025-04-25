@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clayton's Radar Mosaic</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    body { background-color: #cce6ff; } /* Light blue */
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([31.5, -99.3], 6); // Centered on Texas
+
+    // Add a light background
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Radar layer (RainViewer example)
+    const radarLayer = L.tileLayer('https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/2/1_1.png', {
+      attribution: 'Radar data © RainViewer',
+      opacity: 0.8,
+      tileSize: 256,
+      updateWhenIdle: true
+    }).addTo(map);
+
+    // Update time: optional auto-timer or manual refresh logic can be added later
+  </script>
+</body>
+</html>
