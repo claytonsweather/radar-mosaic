@@ -7,29 +7,76 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     html, body, #map { height: 100%; margin: 0; }
-    body { background-color: #cce6ff; } /* Light blue */
+    body { background-color: #cce6ff; }
+    .leaflet-control-attribution { font-size: 11px; }
   </style>
 </head>
 <body>
   <div id="map"></div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([31.5, -99.3], 6); // Centered on Texas
+    const map = L.map('map').setView([31.5, -99.3], 6); // Center on Texas
 
-    // Add a light background
+    // Light background map
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Radar layer (RainViewer example)
-    const radarLayer = L.tileLayer('https://tilecache.rainviewer.com/v2/radar/{time}/256/{z}/{x}/{y}/2/1_1.png', {
-      attribution: 'Radar data © RainViewer',
-      opacity: 0.8,
-      tileSize: 256,
-      updateWhenIdle: true
-    }).addTo(map);
+    // Radar animation loop from RainViewer with smooth transitions
+    let radarTimestamps = [];
+    let radarLayers = [];
+    let currentLayer = 0;
 
-    // Update time: optional auto-timer or manual refresh logic can be added later
+    fetch('https://tilecache.rainviewer.com/api/maps.json')
+      .then(response => response.json())
+      .then(data => {
+        radarTimestamps = data.slice(-6); // Last 6 frames
+
+        radarLayers = radarTimestamps.map(ts => {
+          const layer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${ts}/256/{z}/{x}/{y}/2/1_1.png`, {
+            opacity: 0,
+            tileSize: 256
+          }).addTo(map);
+          return layer;
+        });
+
+        radarLayers[0].setOpacity(0.7); // Start with the first visible
+        setInterval(() => {
+          radarLayers[currentLayer].setOpacity(0);
+          currentLayer = (currentLayer + 1) % radarLayers.length;
+          radarLayers[currentLayer].setOpacity(0.7);
+        }, 1000);
+      });
+
+    // NWS weather warnings (GeoJSON)
+    const warningsURL = 'https://api.weather.gov/alerts/active?status=actual&message_type=alert';
+
+    fetch(warningsURL)
+      .then(res => res.json())
+      .then(data => {
+        const warningLayer = L.geoJSON(data, {
+          style: feature => ({
+            color: '#ff0000',
+            weight: 2,
+            fillOpacity: 0.3
+          }),
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(`<strong>${feature.properties.event}</strong><br>${feature.properties.areaDesc}`);
+          }
+        });
+        warningLayer.addTo(map);
+      });
+
+    // Optional: Lightning overlay (example with a placeholder tile layer)
+    // You need a real lightning tile provider to replace this
+    /*
+    const lightningLayer = L.tileLayer('https://your-lightning-provider.com/tiles/{z}/{x}/{y}.png', {
+      opacity: 0.6,
+      attribution: 'Lightning data'
+    }).addTo(map);
+    */
+
   </script>
 </body>
 </html>
